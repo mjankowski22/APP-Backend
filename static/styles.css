@@ -1,0 +1,42 @@
+h1{
+    color: black;
+    text-align: left;
+}
+p{
+    color: black;
+    text-align: left;
+    font-size: 20px;
+}
+#container{
+    width:1300px ;
+}
+#form{
+    width:1300px ;
+}
+#console{
+    border:5px solid dodgerblue;
+    background-color: white;
+    height: 650px ;
+    padding-left: 5px;
+    margin-bottom: 5px;
+    position: relative;
+    width: inherit;
+}
+#interval{
+    width: 300px;
+    border: 5px solid dodgerblue;
+    height: 40px;
+    padding-left: 5px;
+    font-size: 18px;
+}
+.console-content{
+    max-height: 600px; /* Maksymalna wysokość paska przewijania */
+    overflow-y: auto; /* Włącz pasek przewijania, gdy zawartość przekracza wysokość */
+    padding: 10px; /* Dodaj wewnętrzny odstęp dla lepszego wyglądu */
+}
+#container-left{
+    display: inline-block;
+}
+#container-right{
+    display: inline-block;
+}

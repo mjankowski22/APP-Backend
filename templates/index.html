@@ -1,0 +1,73 @@
+{% extends "bootstrap/base.html" %}
+
+{% block styles %}
+{{super()}}
+<link rel="stylesheet" href="../static/styles.css">
+{% endblock %}
+
+{% block content %}
+<div id='container-left'>
+<h1>Menu</h1>
+<div id="container">
+  <div id="console">
+    <div id="console_content" class="console-content">
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    </div>
+  </div>
+  <form method="POST">
+    <input id="interval" type="number" name="interval" placeholder="Okres nadawania wiadomosci [s]" min="1" max="20" step="0.01">
+    <button type="submit" class="btn btn-primary">Send command</button>
+  </form>
+  {% if queued_message is not none %}
+    <p>Present queued message: {{ queued_message }}</p>
+  {% endif %}
+</div>
+</div>
+<div id='container-right'>
+  <form method="POST" action="/check-5g">
+    <button id="check-5g-button">Sprawdź połączenie 5G</button>
+  </form>
+  <form method="POST" action="/upload5g_whole_request">
+    <button id="check-5g-button">Wysłanie całego pliku 5G</button>
+  </form>
+  <form action="/upload5g_part_request" method="post">
+    <label for="start_date">Data początkowa:</label>
+    <input type="date" id="start_date" name="start_date">
+
+    <label for="end_date">Data końcowa:</label>
+    <input type="date" id="end_date" name="end_date">
+
+    <input type="submit" value="Wyslanie czesci pliku 5g">
+</form>
+</div>
+<div id='container-right'>
+  <form method="POST" action="/check-wifi">
+    <button id="check-5g-button">Sprawdź połączenie WiFi</button>
+  </form>
+  <form method="POST" action="/uploadwifi_whole_request">
+    <button id="check-5g-button">Wysłanie całego pliku WiFi</button>
+  </form>
+  <form action="/uploadwifi_part_request" method="post">
+    <label for="start_date">Data początkowa:</label>
+    <input type="date" id="start_date" name="start_date">
+
+    <label for="end_date">Data końcowa:</label>
+    <input type="date" id="end_date" name="end_date">
+
+    <input type="submit" value="Wyslanie czesci pliku WiFi">
+</form>
+</div>
+<script>
+    // Odświeżanie co 5 sekund
+    setInterval(function() {
+        location.reload();
+    }, 20000);
+
+    // Przewijanie do ostatniej wiadomości
+    var consoleContent = document.getElementById('console_content');
+    consoleContent.scrollTop = consoleContent.scrollHeight;
+</script>
+
+{% endblock %}
