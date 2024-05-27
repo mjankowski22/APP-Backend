@@ -6,11 +6,11 @@ from datetime import datetime
 import pandas as pd
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO,emit
-
+from flask_cors import CORS
 
 
 app = Flask(__name__)
-socketIO = SocketIO(app)
+socketIO = SocketIO(app,cors_allowed_origins='*')
 
 
 @socketIO.on('connect')
@@ -23,12 +23,12 @@ def handle_disconnect():
 
 
 ## Nie ruszać
-app.config['MQTT_BROKER_URL'] = 'localhost'  # Adres brokera MQTT
+app.config['MQTT_BROKER_URL'] = '153.19.55.87'  # Adres brokera MQTT
 app.config['MQTT_BROKER_PORT'] = 1883        # Port brokera MQTT
 app.config['MQTT_KEEPALIVE'] = 60
 app.config['MQTT_TLS_ENABLED'] = False
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://root:APP@localhost/database'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://root:APP@153.19.55.87/database'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -38,7 +38,7 @@ db = SQLAlchemy(app)
 # Zostawić
 mqtt = Mqtt(app)
 
-
+CORS(app)
 
 #To git powinno byc
 class Data(db.Model):
@@ -246,7 +246,7 @@ def handle_message(client, userdata, message):
         
         elif sign=='I':
             interval = data_parts[1]
-            message = f'<{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}> Interval change confirmed - interval: {interval}'
+            message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> Interval change confirmed - interval: {interval}"
 
         elif sign=='P':
             connection = data_parts[1]
