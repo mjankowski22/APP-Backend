@@ -13,22 +13,22 @@ app = Flask(__name__)
 socketIO = SocketIO(app)
 
 
-@SocketIO.on('connect')
+@socketIO.on('connect')
 def handle_connect():
     print('Client connected')
 
-@SocketIO.on('disconnect')
+@socketIO.on('disconnect')
 def handle_disconnect():
     print('Client disconnected')
 
 
 ## Nie ruszać
-app.config['MQTT_BROKER_URL'] = '153.19.55.87'  # Adres brokera MQTT
+app.config['MQTT_BROKER_URL'] = 'localhost'  # Adres brokera MQTT
 app.config['MQTT_BROKER_PORT'] = 1883        # Port brokera MQTT
 app.config['MQTT_KEEPALIVE'] = 60
 app.config['MQTT_TLS_ENABLED'] = False
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://root:APP@153.19.55.87/database'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://root:APP@localhost/database'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -246,7 +246,7 @@ def handle_message(client, userdata, message):
         
         elif sign=='I':
             interval = data_parts[1]
-            message = f"<{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}> Interval change confirmed - interval: {interval}"
+            message = f'<{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}> Interval change confirmed - interval: {interval}'
 
         elif sign=='P':
             connection = data_parts[1]
@@ -277,4 +277,4 @@ def handle_message(client, userdata, message):
     
 
 if __name__ == '__main__':
-    socketIO.run(app,host='0.0.0.0',debug=True)
+    socketIO.run(app,host='0.0.0.0',debug=True,allow_unsafe_werkzeug=True)
