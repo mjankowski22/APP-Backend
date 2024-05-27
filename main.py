@@ -1,11 +1,10 @@
 from flask import Flask, render_template,request,redirect
-
 from flask_mqtt import Mqtt
-from flask_bootstrap import Bootstrap
 import json
 import base64
 from datetime import datetime
 import pandas as pd
+from flask_sqlalchemy import SQLAlchemy
 
 
 
@@ -19,10 +18,12 @@ app.config['MQTT_BROKER_PORT'] = 1883        # Port brokera MQTT
 app.config['MQTT_KEEPALIVE'] = 60
 app.config['MQTT_TLS_ENABLED'] = False
 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://root:APP@153.19.55.87/database'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-### Zmienić
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lora_queries.db'
-# db = SQLAlchemy(app)
+
+
 
 # Zostawić
 mqtt = Mqtt(app)
