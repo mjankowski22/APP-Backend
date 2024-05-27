@@ -13,12 +13,12 @@ app = Flask(__name__)
 
 
 ## Nie ruszać
-app.config['MQTT_BROKER_URL'] = '153.19.55.87'  # Adres brokera MQTT
+app.config['MQTT_BROKER_URL'] = 'localhost'  # Adres brokera MQTT
 app.config['MQTT_BROKER_PORT'] = 1883        # Port brokera MQTT
 app.config['MQTT_KEEPALIVE'] = 60
 app.config['MQTT_TLS_ENABLED'] = False
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://root:APP@153.19.55.87/database'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://root:APP@localhost/database'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -183,6 +183,11 @@ def request_part_file_wifi():
 def handle_connect(client, userdata, flags, rc):
     mqtt.subscribe('/mqtt/uplink') 
     mqtt.subscribe('/mqtt/join') 
+
+
+@app.route('/',methods=['POST','GET'])
+def index():
+    return 'Hello world'
 
 
 
