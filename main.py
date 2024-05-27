@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 
 ## Nie ruszać
-app.config['MQTT_BROKER_URL'] = 'localhost'  # Adres brokera MQTT
+app.config['MQTT_BROKER_URL'] = '153.19.55.87'  # Adres brokera MQTT
 app.config['MQTT_BROKER_PORT'] = 1883        # Port brokera MQTT
 app.config['MQTT_KEEPALIVE'] = 60
 app.config['MQTT_TLS_ENABLED'] = False
@@ -30,7 +30,7 @@ mqtt = Mqtt(app)
 
 
 
-## Modele do zmiany na format dla PostgreSQL
+#To git powinno byc
 class Data(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.String(50), nullable=False)
@@ -61,7 +61,7 @@ class WeatherData(db.Model):
 
 
 
-#Nie zmieniać nazwy endpointu, zmienić zapisywanie danych na PostrgreSQL
+
 @app.route('/upload_file', methods=['POST'])
 def upload_file():
     if 'file' in request.files:
@@ -216,7 +216,6 @@ def handle_message(client, userdata, message):
                 longitude=0
             
 
-            #Zapisywanie danych z LoraWan do bazy danych - trzeba zmienic na PostgreSQL
             data = Data(
                 timestamp=timestamp,
                 latitude=latitude,
@@ -225,7 +224,7 @@ def handle_message(client, userdata, message):
             )
             db.session.add(data)
             db.session.commit()
-            ####
+           
 
 
         ### W tych ifach do zmiany jest logika z message, tutaj trzeba bedzie dawac znac frontendowi ze cos przyszlo - do ustalenia jak to zrobic i co z tym bedzie sie dzialo po stronie frontendu
