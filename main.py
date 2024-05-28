@@ -126,14 +126,12 @@ def upload_file():
 
 
 #5g musi zostać jeśli chodzi o komunikację przez MQTT, to jak przekazywane są console_messages do zmiany, obsługa formularzy też
-@app.route('/check-5g', methods=['POST'])
-def check_5g():
-    py_dict = {'5g_check':1}
+@app.route('/turn_wifi', methods=['POST'])
+def turn_wifi():
+    py_dict = {'turn_wifi':1}
     message = base64.b64encode(json.dumps(py_dict).encode('utf-8')).decode('utf-8')
     mqtt.publish('/mqtt/downlink/2cf7f120323086aa',json.dumps({"confirmed": False, "fport": 85, "data": message}))
-    # console_messages.append(f'<{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}> Checking 5G connection..')
-    # check_length(console_messages)
-    return redirect('/')
+    return 200
 
 @app.route('/upload5g_whole_request', methods=['POST'])
 def request_whole_file_5g():
@@ -218,6 +216,7 @@ def handle_message(client, userdata, message):
             latitude_str = data_parts[2]
             longitude_str = data_parts[3]
             memory_status = data_parts[4]
+            fiveg_status = data_parts[5]
             if latitude_str.startswith("N"):
                 latitude = float(latitude_str[1:])
             elif latitude_str.startswith("S"):
@@ -231,6 +230,10 @@ def handle_message(client, userdata, message):
             else:
                 longitude=0
             
+            if fiveg_status == '1':
+                socketIO.emit('fiveg',{'status':1})
+            else:
+                socketIO.emit('fiveg',{'status':0})
 
             data = Data(
                 timestamp=timestamp,
@@ -248,30 +251,26 @@ def handle_message(client, userdata, message):
             interval = data_parts[1]
             message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> Interval change confirmed - interval: {interval}"
 
-        elif sign=='P':
-            connection = data_parts[1]
-            if connection == '1':
-                message = f"5G connection is available"
-            else:
-                message = f"5G connection is no longer available"
 
         elif sign=='G':
             connection = data_parts[1]
             if connection == '1':
-                message = f"Data was sent sucessfully"
+                message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> Data was sent sucessfully"
             else:
-                message = f"Cannot send data"
+                message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> Cannot send data"
 
         elif sign=='B':
             connection = data_parts[1]
+            addr = data_parts[2]
             if connection == '1':
-                message = f"WiFi is now on"
+                message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> WiFi is now on - IP address {addr}"
+                socketIO.emit('wifi',{'status':1})
             else:
-                message = f"WiFi is now off"
-
+                message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> WiFi is now off"
+                socketIO.emit('wifi',{'status':0})
             
     except KeyError:
-        message = "Device connected succesfully"
+        message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> Device connected succesfully"
     
     socketIO.emit('console_message',{'message':message})
     
