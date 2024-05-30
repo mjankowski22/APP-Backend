@@ -131,7 +131,7 @@ def turn_wifi():
     py_dict = {'turn_wifi':1}
     message = base64.b64encode(json.dumps(py_dict).encode('utf-8')).decode('utf-8')
     mqtt.publish('/mqtt/downlink/2cf7f120323086aa',json.dumps({"confirmed": False, "fport": 85, "data": message}))
-    return 200
+    return '',200
 
 @app.route('/upload5g_whole_request', methods=['POST'])
 def request_whole_file_5g():
@@ -145,12 +145,12 @@ def request_whole_file_5g():
             message = base64.b64encode(json.dumps(py_dict).encode('utf-8')).decode('utf-8')
             mqtt.publish('/mqtt/downlink/2cf7f120323086aa',json.dumps({"confirmed": False, "fport": 85, "data": message}))
 
-            return 200
+            return '',200
         
         except ValueError as e:
-            return 400
+            return '',400
     else:
-        return 400
+        return '',400
     
 
 @app.route('/upload5g_part_request', methods=['POST'])
@@ -165,11 +165,11 @@ def request_part_file_5g():
             py_dict = {'5g_send_part':1,'start':start_date,'end':end_date,'delete':delete}
             message = base64.b64encode(json.dumps(py_dict).encode('utf-8')).decode('utf-8')
             mqtt.publish('/mqtt/downlink/2cf7f120323086aa',json.dumps({"confirmed": False, "fport": 85, "data": message}))
-            return 200
+            return '',200
         except ValueError as e:
-            return 400
+            return '',400
     else:
-        return 400
+        return '',400
 
 
 
@@ -191,89 +191,94 @@ def index():
 @app.route('/interval_change',methods=['POST'])
 def change_interval():
     data = request.get_json()
-    if 'interval' in data and isinstance(data['number'], int):
+    if 'interval' in data and isinstance(data['interval'], int):
         interval = data['interval']
         py_dict = {"interval":interval}
         message = base64.b64encode(json.dumps(py_dict).encode('utf-8')).decode('utf-8')
         mqtt.publish('/mqtt/downlink/2cf7f120323086aa',json.dumps({"confirmed": False, "fport": 85, "data": message}))
-        return 200
+        return '',200
     else:
-        return 400
+        return '',400
 
 #####
 ##### W tym juz lepiej nic nie ruszac powinno byc git
 #####
 @mqtt.on_message()
-def handle_message(client, userdata, message):    
-    try:
-        message = json.loads(message.payload.decode())["data"]
-        message = base64.b64decode(message).decode('utf-8')
-        data_parts = message.split(',')
-        message = message[2:]
-        sign=data_parts[0]
-        if sign == 'M':
-            timestamp = data_parts[1]
-            latitude_str = data_parts[2]
-            longitude_str = data_parts[3]
-            memory_status = data_parts[4]
-            fiveg_status = data_parts[5]
-            if latitude_str.startswith("N"):
-                latitude = float(latitude_str[1:])
-            elif latitude_str.startswith("S"):
-                latitude = -float(latitude_str[1:])
-            else:
-                latitude = 0
-            if longitude_str.startswith("E"):
-                longitude = float(longitude_str[1:])
-            elif longitude_str.startswith("W"):
-                longitude = -float(longitude_str[1:])
-            else:
-                longitude=0
+def handle_message(client, userdata, message):
+    with app.app_context():
+        try:
+            message = json.loads(message.payload.decode())["data"]
+            message = base64.b64decode(message).decode('utf-8')
+            data_parts = message.split(',')
+            message = message[2:]
+            print(message)
+            sign=data_parts[0]
+            if sign == 'M':
+                timestamp = data_parts[1]
+                latitude_str = data_parts[2]
+                longitude_str = data_parts[3]
+                memory_status = data_parts[4]
+                fiveg_status = data_parts[5]
+                if latitude_str.startswith("N"):
+                    latitude = float(latitude_str[1:])
+                elif latitude_str.startswith("S"):
+                    latitude = -float(latitude_str[1:])
+                else:
+                    latitude = 0
+                if longitude_str.startswith("E"):
+                    longitude = float(longitude_str[1:])
+                elif longitude_str.startswith("W"):
+                    longitude = -float(longitude_str[1:])
+                else:
+                    longitude=0
+                
+                if fiveg_status == '1':
+                    socketIO.emit('fiveg',{'status':1})
+                else:
+                    socketIO.emit('fiveg',{'status':0})
+
+                data = Data(
+                    timestamp=timestamp,
+                    latitude=latitude,
+                    longitude=longitude,
+                    memory_status=memory_status
+                )
+                db.session.add(data)
+                db.session.commit()
+                message = f'<{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}> Data received via LoraWAN: latitude - {latitude}, longitude - {longitude}, memory status - {memory_status}'
+
+
             
-            if fiveg_status == '1':
-                socketIO.emit('fiveg',{'status':1})
-            else:
-                socketIO.emit('fiveg',{'status':0})
-
-            data = Data(
-                timestamp=timestamp,
-                latitude=latitude,
-                longitude=longitude,
-                memory_status=memory_status
-            )
-            db.session.add(data)
-            db.session.commit()
-            message = f'<{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}> Data received via LoraWAN: latitude - {latitude}, longitude - {longitude}, memory status - {memory_status}'
+            elif sign=='I':
+                interval = data_parts[1]
+                message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> Interval change confirmed - interval: {interval}"
 
 
+            elif sign=='G':
+                connection = data_parts[1]
+                if connection == '1':
+                    message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> Data was sent sucessfully"
+                else:
+                    message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> Cannot send data"
+
+            elif sign=='B':
+                connection = data_parts[1]
+                addr = data_parts[2]
+                if connection == '1':
+                    message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> WiFi is now on - IP address {addr}"
+                    socketIO.emit('wifi',{'status':1})
+                else:
+                    message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> WiFi is now off"
+                    socketIO.emit('wifi',{'status':0})
+                
+        except KeyError:
+            message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> Device connected succesfully"
+        except:
+            print('Cos nie poszlo')
         
-        elif sign=='I':
-            interval = data_parts[1]
-            message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> Interval change confirmed - interval: {interval}"
-
-
-        elif sign=='G':
-            connection = data_parts[1]
-            if connection == '1':
-                message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> Data was sent sucessfully"
-            else:
-                message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> Cannot send data"
-
-        elif sign=='B':
-            connection = data_parts[1]
-            addr = data_parts[2]
-            if connection == '1':
-                message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> WiFi is now on - IP address {addr}"
-                socketIO.emit('wifi',{'status':1})
-            else:
-                message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> WiFi is now off"
-                socketIO.emit('wifi',{'status':0})
-            
-    except KeyError:
-        message = f"<{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}> Device connected succesfully"
-    
-    socketIO.emit('console_message',{'message':message})
+        socketIO.emit('console_message',{'message':message})
     
 
 if __name__ == '__main__':
     socketIO.run(app,host='0.0.0.0',debug=True,allow_unsafe_werkzeug=True)
+    
